@@ -1,6 +1,6 @@
  // ここに表示したい画像ファイル名を配列で入れてください。
     // 例: ['apple.jpg','banana.jpg'] として images/ に配置
-    const IMAGES = Array.from({length: 9}, (_, i) => `images/${i+1}.jpg`);
+    const IMAGES = Array.from({length: 7}, (_, i) => `images/${i+1}.jpg`);
     const imgEl = document.getElementById('cardImg');
     const placeholder = document.getElementById('placeholder');
     const shuffleBtn = document.getElementById('shuffleBtn');
