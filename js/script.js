@@ -1,75 +1,88 @@
- // ここに表示したい画像ファイル名を配列で入れてください。
-    // 例: ['apple.jpg','banana.jpg'] として images/ に配置
-    const IMAGES = Array.from({length: 7}, (_, i) => `images/${i+1}.jpg`);
-    const imgEl = document.getElementById('cardImg');
-    const placeholder = document.getElementById('placeholder');
-    const shuffleBtn = document.getElementById('shuffleBtn');
+// 1〜9.jpg までを配列に
+const IMAGES = Array.from({ length: 9 }, (_, i) => `images/${i + 1}.jpg`);
 
-    // ランダムな要素を返す
-    function randomFrom(arr){
-      return arr[Math.floor(Math.random()*arr.length)];
-    }
+const imgEl = document.getElementById('cardImg');
+const placeholder = document.getElementById('placeholder');
+const shuffleBtn = document.getElementById('shuffleBtn');
 
-    // 画像を表示する（引数は画像のパス）
-    function showImage(src){
-      if(!src){
-        imgEl.classList.remove('show');
-        imgEl.src = '';
-        placeholder.style.display = 'block';
-        return;
-      }
+// ランダムシャッフル用のキュー
+let queue = [];
+let indexInQueue = 0;
 
-      // プレースホルダー非表示
-      placeholder.style.display = 'none';
+// 配列をシャッフルする（Fisher–Yates）
+function shuffleArray(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
-      // プリロードしてからフェード表示
-      const pre = new Image();
-      pre.onload = () => {
-        imgEl.src = src;
-        // 少し遅延して class を付けてフェードを発動
-        requestAnimationFrame(()=>{
-          imgEl.classList.add('show');
-        });
-      };
-      pre.onerror = () => {
-        // 読み込み失敗時はプレースホルダーを戻す
-        placeholder.textContent = '画像を読み込めませんでした';
-        placeholder.style.display = 'block';
-        imgEl.classList.remove('show');
-      };
-      pre.src = src;
-    }
+// キューを作り直す
+function resetQueue() {
+  queue = shuffleArray(IMAGES);
+  indexInQueue = 0;
+}
 
-    // シャッフル動作: IMAGES 配列からランダムに表示
-    function shuffle(){
-      if(!IMAGES || IMAGES.length === 0){
-        placeholder.textContent = 'images フォルダに画像を入れてください';
-        placeholder.style.display = 'block';
-        return;
-      }
-      // 同じ画像が連続しないように工夫
-      let next = randomFrom(IMAGES);
-      const current = imgEl.src.split('/').slice(-1)[0];
-      // 現在のファイル名と同じなら最大5回リトライ
-      let attempts = 0;
-      while(next.split('/').slice(-1)[0] === current && attempts < 5){
-        next = randomFrom(IMAGES);
-        attempts++;
-      }
+// 画像を表示する（引数は画像のパス）
+function showImage(src) {
+  if (!src) {
+    imgEl.classList.remove('show');
+    imgEl.src = '';
+    placeholder.style.display = 'block';
+    return;
+  }
 
-      // 一度クラスを外してから次を読み込む（スムーズな遷移）
-      imgEl.classList.remove('show');
-      // 小さなタイミング調整
-      setTimeout(()=> showImage(next), 140);
-    }
+  // プレースホルダー非表示
+  placeholder.style.display = 'none';
 
-    // イベント
-    shuffleBtn.addEventListener('click', shuffle);
-
-    // スペースキーでシャッフル
-    window.addEventListener('keydown', (e)=>{
-      if(e.code === 'Space'){
-        e.preventDefault();
-        shuffle();
-      }
+  // プリロードしてからフェード表示
+  const pre = new Image();
+  pre.onload = () => {
+    imgEl.src = src;
+    requestAnimationFrame(() => {
+      imgEl.classList.add('show');
     });
+  };
+  pre.onerror = () => {
+    // 読み込み失敗時はプレースホルダーを戻す
+    placeholder.textContent = '画像を読み込めませんでした';
+    placeholder.style.display = 'block';
+    imgEl.classList.remove('show');
+  };
+  pre.src = src;
+}
+
+// 「次の1枚」を表示（9枚見終わったらまた新しくシャッフル）
+function nextImage() {
+  if (!IMAGES || IMAGES.length === 0) {
+    placeholder.textContent = 'images フォルダに画像を入れてください';
+    placeholder.style.display = 'block';
+    return;
+  }
+
+  // キューが空、またはすべて表示し終わったら作り直す
+  if (!queue.length || indexInQueue >= queue.length) {
+    resetQueue();
+  }
+
+  const next = queue[indexInQueue];
+  indexInQueue++;
+
+  imgEl.classList.remove('show');
+  setTimeout(() => showImage(next), 140);
+}
+
+// イベント
+shuffleBtn.addEventListener('click', nextImage);
+
+// スペースキーで次へ
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    nextImage();
+  }
+});
+
+// 初期状態ではプレースホルダーのみ表示
